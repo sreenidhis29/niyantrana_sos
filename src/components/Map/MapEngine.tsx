@@ -11,22 +11,19 @@ const iconRetinaUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2
 const shadowUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png';
 
 const customIcon = new L.Icon({
-    iconUrl,
-    iconRetinaUrl,
-    shadowUrl,
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png',
+    shadowUrl: '', // Remove shadow for solid look
     iconSize: [25, 41],
     iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
+    popupAnchor: [1, -34]
 });
 
 const dispatchedIcon = new L.Icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-    shadowUrl,
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
+    shadowUrl: '', // Remove shadow for solid look
     iconSize: [25, 41],
     iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
+    popupAnchor: [1, -34]
 });
 
 export interface MapUnit {
@@ -51,6 +48,7 @@ export interface MapEngineProps {
     units?: MapUnit[];
     zones?: MapZone[];
     center?: [number, number];
+    sosMarker?: { lat: number; lng: number } | null;
     onUnitDrop?: (unitData: { id: string; name: string; type: string }, lat: number, lng: number) => void;
 }
 
@@ -107,22 +105,22 @@ const DropHandler: React.FC<{ onUnitDrop: MapEngineProps['onUnitDrop'] }> = ({ o
     return null;
 };
 
-const MapEngine: React.FC<MapEngineProps> = ({ units = [], zones = [], center, onUnitDrop }) => {
+const MapEngine: React.FC<MapEngineProps> = ({ units = [], zones = [], center, sosMarker, onUnitDrop }) => {
     const { incidents, loading } = useIncidents();
-    const defaultCenter = [28.6139, 77.2090] as [number, number];
+    const defaultCenter = [13.0118, 77.5552] as [number, number];
 
     if (loading) return <div className="h-full w-full flex items-center justify-center text-cyber-cyan font-mono text-sm tracking-widest bg-slate-950">INITIALIZING CARTOGRAPHY...</div>;
 
     return (
         <MapContainer
             center={defaultCenter}
-            zoom={12}
+            zoom={14}
             className="w-full h-full"
             zoomControl={false}
             attributionControl={false}
         >
             <TileLayer
-                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                 attribution="&copy; <a href='https://carto.com/'>CARTO</a>"
             />
 
@@ -177,6 +175,27 @@ const MapEngine: React.FC<MapEngineProps> = ({ units = [], zones = [], center, o
                     </Popup>
                 </Circle>
             ))}
+
+            {/* Glowing SOS Incircle Signal */}
+            {sosMarker && (
+                <CircleMarker
+                    center={[sosMarker.lat, sosMarker.lng]}
+                    radius={15}
+                    pathOptions={{
+                        color: '#f43f5e',
+                        fillColor: '#f43f5e',
+                        fillOpacity: 0.6,
+                        className: 'animate-radar-pulse'
+                    }}
+                >
+                    <Popup>
+                        <div className="bg-slate-900 text-cyber-cyan p-2 font-mono text-xs border border-alert-rose">
+                            <h3 className="font-bold text-alert-rose uppercase">CRITICAL SOS</h3>
+                            <p>Distress Signal Received</p>
+                        </div>
+                    </Popup>
+                </CircleMarker>
+            )}
 
             {/* Tactical Units */}
             {units.map((unit) => (

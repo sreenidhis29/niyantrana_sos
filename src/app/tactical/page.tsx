@@ -18,6 +18,17 @@ interface MissionData {
     center: [number, number];
 }
 
+// Function to get a random point inside a circle (Incircle logic)
+function getRandomPointInCircle(centerLat: number, centerLng: number, radiusMeters: number) {
+    const r = radiusMeters * Math.sqrt(Math.random());
+    const theta = Math.random() * 2 * Math.PI;
+    const dy = r * Math.sin(theta);
+    const dx = r * Math.cos(theta);
+    const newLat = centerLat + (dy / 111111);
+    const newLng = centerLng + (dx / (111111 * Math.cos(centerLat * Math.PI / 180)));
+    return { lat: newLat, lng: newLng };
+}
+
 const MISSIONS: MissionData[] = [
     { id: 'alpha', title: 'INCIDENT ALPHA: FIRE', description: 'Major structural fire in commercial zone. High risk of spread.', themeColor: 'rose', center: [13.0118, 77.5552] },
     { id: 'beta', title: 'INCIDENT BETA: FLOOD', description: 'Flash flooding reported in low-lying areas. Evacuation required.', themeColor: 'blue', center: [11.7480, 79.7714] },
@@ -35,6 +46,7 @@ function TacticalDashboardContent() {
     const [logs, setLogs] = useState<MissionLog[]>([]);
     const [toast, setToast] = useState<{ message: string; type: 'error' | 'info' } | null>(null);
     const [activeSOS, setActiveSOS] = useState<any>(null);
+    const [sosMarker, setSosMarker] = useState<{ lat: number; lng: number } | null>(null);
     const [isSOSModalOpen, setIsSOSModalOpen] = useState(false);
 
     useEffect(() => {
@@ -81,9 +93,19 @@ function TacticalDashboardContent() {
                     if (now - signalTime < 30000 && data.status === 'active') {
                         setActiveSOS(data);
                         setIsSOSModalOpen(true);
+
+                        // Generate dynamic incircle marker for the dashboard map
+                        const randomPos = getRandomPointInCircle(data.lat, data.lng, 200);
+                        setSosMarker(randomPos);
+
                         setLogs((prev) => [
                             ...prev,
-                            { id: `sos-${Date.now()}`, timestamp: new Date(), message: `CRITICAL: INCOMING SOS SIGNAL DETECTED.`, type: 'error' }
+                            {
+                                id: `sos-${Date.now()}`,
+                                timestamp: new Date(),
+                                message: `CRITICAL SOS [${data.id.slice(-4)}]: LAT:${data.lat.toFixed(4)} LNG:${data.lng.toFixed(4)} // STATUS: ACTIVE`,
+                                type: 'error'
+                            }
                         ]);
                     }
                 });
@@ -206,6 +228,7 @@ function TacticalDashboardContent() {
                         units={dispatchedMapUnits}
                         zones={mapZones}
                         center={selectedMission.center}
+                        sosMarker={sosMarker}
                         onUnitDrop={handleUnitDrop}
                     />
                     <div className="absolute inset-0 pointer-events-none flex items-end justify-center pb-4 z-20">
@@ -215,24 +238,27 @@ function TacticalDashboardContent() {
                     </div>
                 </div>
 
-                <div className="flex-[3] h-full relative shadow-2xl flex flex-col gap-4">
-                    <button
-                        onClick={async () => {
-                            if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
-                                await setDoc(doc(db, 'broadcast_alerts', 'latest'), {
-                                    id: 'alert-' + Date.now(),
-                                    timestamp: serverTimestamp(),
-                                    message: 'EMERGENCY: EVACUATE REGION // INITIALIZE SOS UPLINK',
-                                    status: 'active'
-                                });
-                                setToast({ message: 'BROADCAST ALERT SENT TO MOBILE', type: 'info' });
-                            }
-                        }}
-                        className="w-full py-4 bg-slate-900 border-2 border-cyber-cyan text-cyber-cyan font-bold uppercase tracking-[0.3em] hover:bg-cyber-cyan hover:text-slate-950 transition-all shadow-[0_0_20px_rgba(34,211,238,0.2)]"
-                    >
-                        Broadcast SOS Link
-                    </button>
-                    <div className="flex-1">
+                <div className="flex-[3] h-full relative shadow-2xl flex flex-col gap-6">
+                    <div className="p-4 border-2 border-cyber-cyan/30 bg-slate-900 shadow-inner">
+                        <h3 className="text-[10px] font-bold text-cyber-cyan/60 uppercase tracking-[0.3em] mb-4">Command Actions</h3>
+                        <button
+                            onClick={async () => {
+                                if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
+                                    await setDoc(doc(db, 'broadcast_alerts', 'latest'), {
+                                        id: 'alert-' + Date.now(),
+                                        timestamp: serverTimestamp(),
+                                        message: 'EMERGENCY: EVACUATE REGION // INITIALIZE SOS UPLINK',
+                                        status: 'active'
+                                    });
+                                    setToast({ message: 'BROADCAST ALERT SENT TO MOBILE', type: 'info' });
+                                }
+                            }}
+                            className="w-full py-4 bg-slate-800 border-2 border-cyber-cyan text-cyber-cyan font-bold uppercase tracking-[0.3em] hover:bg-cyber-cyan hover:text-slate-950 transition-all shadow-[0_0_20px_rgba(34,211,238,0.2)] active:scale-95"
+                        >
+                            Broadcast SOS Link
+                        </button>
+                    </div>
+                    <div className="flex-1 min-h-0">
                         <UnitSidebar
                             units={sidebarUnits}
                             logs={logs}

@@ -10,6 +10,7 @@ export default function VictimPortal() {
     const [isRecording, setIsRecording] = useState(false);
     const [progress, setProgress] = useState(0);
     const [volume, setVolume] = useState(0);
+    const [recordingTime, setRecordingTime] = useState(0);
     const [broadcastAlert, setBroadcastAlert] = useState<any>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const backdropVideoRef = useRef<HTMLVideoElement>(null);
@@ -73,6 +74,7 @@ export default function VictimPortal() {
 
         const startTime = Date.now();
         const duration = 5000;
+        setRecordingTime(0);
 
         if (progressTimer.current) clearInterval(progressTimer.current);
 
@@ -80,6 +82,7 @@ export default function VictimPortal() {
             const elapsed = Date.now() - startTime;
             const newProgress = Math.min((elapsed / duration) * 100, 100);
             setProgress(newProgress);
+            setRecordingTime(elapsed / 1000);
 
             if (newProgress >= 100) {
                 if (progressTimer.current) clearInterval(progressTimer.current);
@@ -348,12 +351,19 @@ export default function VictimPortal() {
                             className="w-full h-full object-cover"
                         />
 
-                        {/* Live/Rec Indicator */}
-                        <div className="absolute top-4 left-4 flex items-center gap-2 z-30 bg-slate-950/60 backdrop-blur-md px-2 py-1 border border-white/10 rounded">
-                            <div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-alert-rose animate-pulse' : 'bg-cyber-cyan animate-pulse'}`} />
-                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white">
-                                {isRecording ? 'RECORDING' : 'LIVE FEED'}
-                            </span>
+                        {/* Live/Rec Indicator & Timer */}
+                        <div className="absolute top-4 left-4 flex flex-col gap-2 z-30">
+                            <div className="flex items-center gap-2 bg-slate-950/60 backdrop-blur-md px-2 py-1 border border-white/10 rounded">
+                                <div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-alert-rose animate-pulse' : 'bg-cyber-cyan animate-pulse'}`} />
+                                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white">
+                                    {isRecording ? 'RECORDING' : 'LIVE FEED'}
+                                </span>
+                            </div>
+                            {isRecording && (
+                                <div className="bg-alert-rose/80 backdrop-blur-md px-2 py-1 rounded text-[10px] font-bold text-white tabular-nums tracking-widest animate-in slide-in-from-left-4">
+                                    00:0{recordingTime.toFixed(2)}s
+                                </div>
+                            )}
                         </div>
                     </div>
 

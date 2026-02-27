@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+import Link from 'next/link';
 
 export type ThemeColor = 'cyan' | 'rose' | 'blue' | 'amber';
 
@@ -64,14 +65,14 @@ export const HUDLayout: React.FC<HUDLayoutProps> = ({ children, themeColor = 'cy
             <div className="absolute inset-0 z-40 pointer-events-none flex flex-col justify-between p-6 bg-slate-950/20">
                 {/* Top Header */}
                 <header className={`flex justify-between items-center w-full border-b ${theme.border} pb-4 ${theme.shadow}`}>
-                    <div className="flex flex-col">
-                        <h1 className={`text-2xl font-bold tracking-widest uppercase ${theme.text} ${theme.textDrop}`}>
+                    <Link href="/" className="flex flex-col group cursor-pointer pointer-events-auto">
+                        <h1 className={`text-2xl font-bold tracking-widest uppercase transition-all duration-300 group-hover:drop-shadow-[0_0_12px_rgba(34,211,238,1)] ${theme.text} ${theme.textDrop}`}>
                             Niyantrana
                         </h1>
                         <span className="text-xs tracking-widest opacity-80 uppercase text-alert-rose">
                             Tactical HUD // Phase 1
                         </span>
-                    </div>
+                    </Link>
                     <div className="flex gap-4 items-center">
                         <div className="flex items-center gap-2">
                             <span className={`h-2 w-2 rounded-full ${theme.bgPulse} animate-pulse`}></span>

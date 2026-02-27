@@ -43,39 +43,39 @@ export const UnitSidebar: React.FC<UnitSidebarProps> = ({ units, logs = [], them
 
     const themeParams = {
         cyan: {
-            text: 'text-cyber-cyan',
-            border: 'border-cyber-cyan/30',
-            bg: 'bg-cyber-cyan/10',
-            glow: 'drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]',
+            text: 'text-white',
+            border: 'border-cyber-cyan',
+            bg: 'bg-slate-900',
+            glow: 'drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]',
             iconHover: 'group-hover:bg-cyber-cyan group-hover:text-slate-950',
-            borderInset: 'shadow-[0_0_10px_rgba(34,211,238,0.1)_inset]',
+            borderInset: 'shadow-none',
             dot: 'bg-cyber-cyan',
         },
         rose: {
-            text: 'text-rose-500',
-            border: 'border-rose-500/30',
-            bg: 'bg-rose-500/10',
-            glow: 'drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]',
+            text: 'text-white',
+            border: 'border-rose-500',
+            bg: 'bg-slate-900',
+            glow: 'drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]',
             iconHover: 'group-hover:bg-rose-500 group-hover:text-slate-950',
-            borderInset: 'shadow-[0_0_10px_rgba(244,63,94,0.1)_inset]',
+            borderInset: 'shadow-none',
             dot: 'bg-rose-500',
         },
         blue: {
-            text: 'text-blue-500',
-            border: 'border-blue-500/30',
-            bg: 'bg-blue-500/10',
-            glow: 'drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]',
+            text: 'text-white',
+            border: 'border-blue-500',
+            bg: 'bg-slate-900',
+            glow: 'drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]',
             iconHover: 'group-hover:bg-blue-500 group-hover:text-slate-950',
-            borderInset: 'shadow-[0_0_10px_rgba(59,130,246,0.1)_inset]',
+            borderInset: 'shadow-none',
             dot: 'bg-blue-500',
         },
         amber: {
-            text: 'text-amber-500',
-            border: 'border-amber-500/30',
-            bg: 'bg-amber-500/10',
-            glow: 'drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]',
+            text: 'text-white',
+            border: 'border-amber-500',
+            bg: 'bg-slate-900',
+            glow: 'drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]',
             iconHover: 'group-hover:bg-amber-500 group-hover:text-slate-950',
-            borderInset: 'shadow-[0_0_10px_rgba(245,158,11,0.1)_inset]',
+            borderInset: 'shadow-none',
             dot: 'bg-amber-500',
         }
     };
@@ -84,10 +84,10 @@ export const UnitSidebar: React.FC<UnitSidebarProps> = ({ units, logs = [], them
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'dispatched': return 'text-alert-rose border-alert-rose/60 bg-alert-rose/10';
-            case 'on_scene': return 'text-green-400 border-green-400/60 bg-green-400/10';
-            case 'en_route': return 'text-yellow-400 border-yellow-400/60 bg-yellow-400/10';
-            default: return `${theme.text} ${theme.border} bg-slate-900/50`;
+            case 'dispatched': return 'text-alert-rose border-alert-rose bg-slate-800';
+            case 'on_scene': return 'text-green-400 border-green-400 bg-slate-800';
+            case 'en_route': return 'text-yellow-400 border-yellow-400 bg-slate-800';
+            default: return `text-white ${theme.border} bg-slate-800`;
         }
     };
 
