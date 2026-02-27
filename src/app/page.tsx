@@ -25,13 +25,13 @@ export default function Home() {
         {step === 'hero' ? (
           <div className="flex flex-col items-center text-center animate-in fade-in zoom-in duration-1000 w-full relative">
             <div className="mb-12 relative group w-full px-4 cursor-default">
-              <h1 className="text-5xl md:text-8xl lg:text-9xl font-black uppercase tracking-[0.4em] drop-shadow-[0_0_15px_rgba(34,211,238,0.5)] mb-4 relative z-10 transition-all duration-300 group-hover:animate-glitch-primary whitespace-nowrap overflow-visible leading-none select-none">
+              <h1 className="text-4xl md:text-6xl font-black uppercase tracking-[0.4em] drop-shadow-[0_0_15px_rgba(34,211,238,0.5)] mb-4 relative z-10 transition-all duration-300 animate-glitch-primary whitespace-nowrap overflow-visible leading-none select-none text-center w-full">
                 Niyantrana
               </h1>
 
               {/* Secondary Chromatic Abberation Layer */}
-              <div className="absolute inset-0 flex items-center justify-center -z-10 opacity-0 group-hover:opacity-40 select-none pointer-events-none transition-all duration-200">
-                <h1 className="text-5xl md:text-8xl lg:text-9xl font-black uppercase tracking-[0.4em] text-alert-rose translate-x-1 group-hover:animate-glitch-secondary blur-[0.5px]">Niyantrana</h1>
+              <div className="absolute inset-0 flex items-center justify-center -z-10 opacity-40 select-none pointer-events-none transition-all duration-200">
+                <h1 className="text-4xl md:text-6xl font-black uppercase tracking-[0.4em] text-alert-rose translate-x-1 animate-glitch-secondary blur-[0.5px] whitespace-nowrap text-center w-full">Niyantrana</h1>
               </div>
 
               <div className="h-[2px] w-48 md:w-96 mx-auto bg-gradient-to-r from-transparent via-cyber-cyan to-transparent opacity-40 mt-8 mb-6 animate-pulse" />
