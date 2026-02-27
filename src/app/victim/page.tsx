@@ -12,6 +12,7 @@ export default function VictimPortal() {
     const [volume, setVolume] = useState(0);
     const [broadcastAlert, setBroadcastAlert] = useState<any>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
+    const backdropVideoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const chunksRef = useRef<Blob[]>([]);
@@ -165,6 +166,10 @@ export default function VictimPortal() {
     useEffect(() => {
         if (!stream) return;
 
+        // Apply stream to persistent video elements
+        if (videoRef.current) videoRef.current.srcObject = stream;
+        if (backdropVideoRef.current) backdropVideoRef.current.srcObject = stream;
+
         // Audio Level Analysis
         try {
             const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -194,10 +199,15 @@ export default function VictimPortal() {
         }
 
         return () => {
-            if (stream) stream.getTracks().forEach(track => track.stop());
-            if (progressTimer.current) clearInterval(progressTimer.current);
             if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
             if (audioContextRef.current) audioContextRef.current.close();
+        };
+    }, [stream]);
+
+    useEffect(() => {
+        return () => {
+            if (stream) stream.getTracks().forEach(track => track.stop());
+            if (progressTimer.current) clearInterval(progressTimer.current);
         };
     }, [stream]);
 
@@ -304,38 +314,34 @@ export default function VictimPortal() {
 
             {/* Live Feed / Recording View */}
             {stream && (
-                <div className={`absolute transition-all duration-500 ease-in-out z-20 overflow-hidden
+                <div className={`absolute transition-all duration-700 ease-in-out z-20 overflow-hidden
                     ${isRecording
-                        ? 'inset-x-0 top-0 bottom-0 bg-slate-950 flex flex-col items-center justify-center pt-20 pb-40'
-                        : 'bottom-10 left-10 w-32 h-44 border border-cyber-cyan/30 bg-slate-900/80'
+                        ? 'inset-0 bg-slate-950 flex flex-col items-center justify-center'
+                        : 'bottom-10 left-10 w-32 h-44 border border-cyber-cyan/30 bg-slate-900/80 shadow-[0_0_20px_rgba(34,211,238,0.2)]'
                     }
                 `}>
-                    {/* Recording Backdrop (Blurred video for atmosphere) */}
-                    {isRecording && (
-                        <div className="absolute inset-0 opacity-20 blur-2xl scale-110 pointer-events-none">
-                            <video
-                                key="backdrop"
-                                ref={(el) => { if (el) el.srcObject = stream; }}
-                                autoPlay
-                                muted
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
-                    )}
+                    {/* Recording Backdrop (Persistent video for atmosphere) */}
+                    <div className={`absolute inset-0 transition-opacity duration-700 pointer-events-none blur-2xl scale-110
+                        ${isRecording ? 'opacity-20' : 'opacity-0'}
+                    `}>
+                        <video
+                            ref={backdropVideoRef}
+                            autoPlay
+                            muted
+                            playsInline
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
 
-                    {/* Main Video Overlay */}
-                    <div className={`relative transition-all duration-500 shadow-2xl overflow-hidden
+                    {/* Main Video Overlay - PERSISTENT ELEMENT */}
+                    <div className={`relative transition-all duration-700 ease-in-out shadow-2xl overflow-hidden
                         ${isRecording
                             ? 'w-[85%] aspect-[3/4] border-2 border-alert-rose ring-4 ring-alert-rose/20'
                             : 'w-full h-full'
                         }
                     `}>
                         <video
-                            ref={(el) => {
-                                if (el && stream) {
-                                    el.srcObject = stream;
-                                }
-                            }}
+                            ref={videoRef}
                             autoPlay
                             muted
                             playsInline
@@ -351,51 +357,51 @@ export default function VictimPortal() {
                         </div>
                     </div>
 
-                    {/* Large Microphone UI (Shown only when recording) */}
-                    {isRecording && (
-                        <div className="mt-12 flex flex-col items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                            <div className="relative">
-                                {/* Sound Wave Rings */}
-                                {[...Array(3)].map((_, i) => (
+                    {/* Large Microphone UI (Transition in when recording) */}
+                    <div className={`transition-all duration-700 flex flex-col items-center gap-6
+                        ${isRecording ? 'mt-12 opacity-100 translate-y-0' : 'mt-0 opacity-0 translate-y-10 pointer-events-none hidden'}
+                    `}>
+                        <div className="relative">
+                            {/* Sound Wave Rings */}
+                            {[...Array(3)].map((_, i) => (
+                                <div
+                                    key={i}
+                                    className="absolute inset-0 rounded-full border border-cyber-cyan/30 pointer-events-none"
+                                    style={{
+                                        transform: `scale(${1 + (volume / 80) * (i + 1)})`,
+                                        opacity: Math.max(0, (volume / 255) * (1 / (i + 1)))
+                                    }}
+                                />
+                            ))}
+
+                            <div className={`p-10 rounded-full border-2 transition-all duration-100 flex items-center justify-center
+                                ${volume > 15 ? 'border-cyber-cyan bg-cyber-cyan/10 shadow-[0_0_60px_rgba(34,211,238,0.5)]' : 'border-cyber-cyan/20 bg-slate-900'}
+                            `}>
+                                <Mic
+                                    className="w-20 h-20 text-cyber-cyan"
+                                    style={{
+                                        transform: `scale(${1 + (volume / 250)})`,
+                                        filter: `drop-shadow(0 0 ${volume / 3}px rgba(34,211,238,0.8))`
+                                    }}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex flex-col items-center gap-1">
+                            <span className="text-xs font-bold tracking-[0.3em] text-cyber-cyan uppercase">Audio Uplink Active</span>
+                            <div className="flex gap-1 h-4 items-end">
+                                {[...Array(8)].map((_, i) => (
                                     <div
                                         key={i}
-                                        className="absolute inset-0 rounded-full border border-cyber-cyan/30 pointer-events-none"
+                                        className="w-1 bg-cyber-cyan/60 rounded-t"
                                         style={{
-                                            transform: `scale(${1 + (volume / 80) * (i + 1)})`,
-                                            opacity: (volume / 255) * (1 / (i + 1))
+                                            height: `${Math.max(2, (volume / (10 + i * 5)) * 100)}%`,
+                                            transition: 'height 0.1s ease-out'
                                         }}
                                     />
                                 ))}
-
-                                <div className={`p-10 rounded-full border-2 transition-all duration-100 flex items-center justify-center
-                                    ${volume > 15 ? 'border-cyber-cyan bg-cyber-cyan/10 shadow-[0_0_60px_rgba(34,211,238,0.5)]' : 'border-cyber-cyan/20 bg-slate-900'}
-                                `}>
-                                    <Mic
-                                        className="w-20 h-20 text-cyber-cyan"
-                                        style={{
-                                            transform: `scale(${1 + (volume / 250)})`,
-                                            filter: `drop-shadow(0 0 ${volume / 3}px rgba(34,211,238,0.8))`
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex flex-col items-center gap-1">
-                                <span className="text-xs font-bold tracking-[0.3em] text-cyber-cyan uppercase">Audio Uplink Active</span>
-                                <div className="flex gap-1 h-4 items-end">
-                                    {[...Array(8)].map((_, i) => (
-                                        <div
-                                            key={i}
-                                            className="w-1 bg-cyber-cyan/60 rounded-t"
-                                            style={{
-                                                height: `${Math.max(2, (volume / (10 + i * 5)) * 100)}%`,
-                                                transition: 'height 0.1s ease-out'
-                                            }}
-                                        />
-                                    ))}
-                                </div>
                             </div>
                         </div>
-                    )}
+                    </div>
                 </div>
             )}
 
