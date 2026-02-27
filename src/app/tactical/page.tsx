@@ -252,6 +252,21 @@ function TacticalDashboardContent() {
                                     });
                                     setToast({ message: 'BROADCAST ALERT SENT TO MOBILE', type: 'info' });
                                 }
+
+                                if ('Notification' in window && 'serviceWorker' in navigator) {
+                                    const permission = await Notification.requestPermission();
+                                    if (permission === 'granted') {
+                                        const registration = await navigator.serviceWorker.ready;
+                                        const options: any = {
+                                            body: 'Emergency Broadcast! Click to open Victim Portal.',
+                                            icon: '/marker-icon-2x-black.png',
+                                            badge: '/marker-icon-2x-violet.png',
+                                            data: { url: '/victim' },
+                                            vibrate: [200, 100, 200, 100, 200, 100, 200]
+                                        };
+                                        registration.showNotification('Niyantrana Alert', options);
+                                    }
+                                }
                             }}
                             className="w-full py-4 bg-slate-800 border-2 border-cyber-cyan text-cyber-cyan font-bold uppercase tracking-[0.3em] hover:bg-cyber-cyan hover:text-slate-950 transition-all shadow-[0_0_20px_rgba(34,211,238,0.2)] active:scale-95"
                         >
