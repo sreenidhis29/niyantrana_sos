@@ -23,13 +23,9 @@ export default function VictimPortal() {
         try {
             const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             setStream(mediaStream);
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream;
-            }
             setPermissionModal(false);
         } catch (err) {
             console.error("Permission denied", err);
-            // In a real app we'd show a better error
             setPermissionModal(false);
         }
     };
@@ -335,7 +331,11 @@ export default function VictimPortal() {
                         }
                     `}>
                         <video
-                            ref={videoRef}
+                            ref={(el) => {
+                                if (el && stream) {
+                                    el.srcObject = stream;
+                                }
+                            }}
                             autoPlay
                             muted
                             playsInline
@@ -361,20 +361,20 @@ export default function VictimPortal() {
                                         key={i}
                                         className="absolute inset-0 rounded-full border border-cyber-cyan/30 pointer-events-none"
                                         style={{
-                                            transform: `scale(${1 + (volume / 100) * (i + 1)})`,
+                                            transform: `scale(${1 + (volume / 80) * (i + 1)})`,
                                             opacity: (volume / 255) * (1 / (i + 1))
                                         }}
                                     />
                                 ))}
 
-                                <div className={`p-8 rounded-full border-2 transition-all duration-100 flex items-center justify-center
-                                    ${volume > 15 ? 'border-cyber-cyan bg-cyber-cyan/10 shadow-[0_0_40px_rgba(34,211,238,0.4)]' : 'border-cyber-cyan/20 bg-slate-900'}
+                                <div className={`p-10 rounded-full border-2 transition-all duration-100 flex items-center justify-center
+                                    ${volume > 15 ? 'border-cyber-cyan bg-cyber-cyan/10 shadow-[0_0_60px_rgba(34,211,238,0.5)]' : 'border-cyber-cyan/20 bg-slate-900'}
                                 `}>
                                     <Mic
-                                        className="w-12 h-12 text-cyber-cyan"
+                                        className="w-20 h-20 text-cyber-cyan"
                                         style={{
-                                            transform: `scale(${1 + (volume / 300)})`,
-                                            filter: `drop-shadow(0 0 ${volume / 4}px rgba(34,211,238,0.8))`
+                                            transform: `scale(${1 + (volume / 250)})`,
+                                            filter: `drop-shadow(0 0 ${volume / 3}px rgba(34,211,238,0.8))`
                                         }}
                                     />
                                 </div>
