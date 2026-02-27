@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
 };
 
+import { PushSubscriptionManager } from "@/components/PushSubscriptionManager";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,6 +30,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <PushSubscriptionManager />
         {children}
         <script
           dangerouslySetInnerHTML={{

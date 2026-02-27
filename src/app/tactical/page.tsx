@@ -244,27 +244,31 @@ function TacticalDashboardContent() {
                         <button
                             onClick={async () => {
                                 if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
-                                    await setDoc(doc(db, 'broadcast_alerts', 'latest'), {
+                                    const alertData = {
                                         id: 'alert-' + Date.now(),
                                         timestamp: serverTimestamp(),
                                         message: 'EMERGENCY: EVACUATE REGION // INITIALIZE SOS UPLINK',
                                         status: 'active'
-                                    });
-                                    setToast({ message: 'BROADCAST ALERT SENT TO MOBILE', type: 'info' });
-                                }
+                                    };
+                                    await setDoc(doc(db, 'broadcast_alerts', 'latest'), alertData);
+                                    setToast({ message: 'BROADCAST ALERT SENT TO COMMS LAYER', type: 'info' });
 
-                                if ('Notification' in window && 'serviceWorker' in navigator) {
-                                    const permission = await Notification.requestPermission();
-                                    if (permission === 'granted') {
-                                        const registration = await navigator.serviceWorker.ready;
-                                        const options: any = {
-                                            body: 'Emergency Broadcast! Click to open Victim Portal.',
-                                            icon: '/marker-icon-2x-black.png',
-                                            badge: '/marker-icon-2x-violet.png',
-                                            data: { url: '/victim' },
-                                            vibrate: [200, 100, 200, 100, 200, 100, 200]
-                                        };
-                                        registration.showNotification('Niyantrana Alert', options);
+                                    // Trigger push notification to all subscribers via API
+                                    try {
+                                        const res = await fetch('/api/push/broadcast', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                title: 'Niyantrana Alert',
+                                                message: alertData.message,
+                                                url: '/victim'
+                                            })
+                                        });
+                                        if (res.ok) {
+                                            console.log('Push broadcast fired');
+                                        }
+                                    } catch (err) {
+                                        console.error("Failed to fire push broadcast", err);
                                     }
                                 }
                             }}
