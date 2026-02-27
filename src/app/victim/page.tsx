@@ -9,12 +9,15 @@ export default function VictimPortal() {
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const [progress, setProgress] = useState(0);
+    const [volume, setVolume] = useState(0);
     const [broadcastAlert, setBroadcastAlert] = useState<any>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const chunksRef = useRef<Blob[]>([]);
     const progressTimer = useRef<NodeJS.Timeout | null>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const animationFrameRef = useRef<number | null>(null);
 
     const requestPermissions = async () => {
         try {
@@ -164,9 +167,41 @@ export default function VictimPortal() {
     };
 
     useEffect(() => {
+        if (!stream) return;
+
+        // Audio Level Analysis
+        try {
+            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const source = audioContext.createMediaStreamSource(stream);
+            const analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            source.connect(analyser);
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            const updateVolume = () => {
+                analyser.getByteFrequencyData(dataArray);
+                let sum = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    sum += dataArray[i];
+                }
+                const average = sum / bufferLength;
+                setVolume(average);
+                animationFrameRef.current = requestAnimationFrame(updateVolume);
+            };
+
+            updateVolume();
+            audioContextRef.current = audioContext;
+        } catch (err) {
+            console.error("Audio Context Error:", err);
+        }
+
         return () => {
             if (stream) stream.getTracks().forEach(track => track.stop());
             if (progressTimer.current) clearInterval(progressTimer.current);
+            if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+            if (audioContextRef.current) audioContextRef.current.close();
         };
     }, [stream]);
 
@@ -187,7 +222,20 @@ export default function VictimPortal() {
                     <span className="text-[10px] opacity-60">NIYANTRANA // V-PORTAL 1.0</span>
                 </div>
                 <div className="flex gap-4">
-                    <Mic className={`w-5 h-5 ${stream ? 'text-cyber-cyan' : 'text-slate-800'}`} />
+                    {!isRecording && (
+                        <div className="relative">
+                            <Mic
+                                className={`w-5 h-5 transition-all duration-100 ${stream ? 'text-cyber-cyan' : 'text-slate-800'}`}
+                                style={{
+                                    filter: stream ? `drop-shadow(0 0 ${volume / 5}px rgba(34,211,238,0.8))` : 'none',
+                                    transform: `scale(${1 + (volume / 200)})`
+                                }}
+                            />
+                            {volume > 10 && (
+                                <div className="absolute -inset-1 rounded-full bg-cyber-cyan/10 animate-ping pointer-events-none" />
+                            )}
+                        </div>
+                    )}
                     <Camera className={`w-5 h-5 ${stream ? 'text-cyber-cyan' : 'text-slate-800'}`} />
                 </div>
             </header>
@@ -258,21 +306,96 @@ export default function VictimPortal() {
                 </div>
             </div>
 
-            {/* Live Feed Mini-Preview (Bottom Left) */}
+            {/* Live Feed / Recording View */}
             {stream && (
-                <div className="absolute bottom-10 left-10 w-32 h-44 border border-cyber-cyan/30 bg-slate-900/80 overflow-hidden z-20 group">
-                    <div className="absolute top-2 left-2 flex items-center gap-1 z-30 bg-slate-950/40 px-1 rounded">
-                        <div className="w-1.5 h-1.5 rounded-full bg-alert-rose animate-pulse" />
-                        <span className="text-[7px] font-bold uppercase tracking-widest text-white">Live</span>
+                <div className={`absolute transition-all duration-500 ease-in-out z-20 overflow-hidden
+                    ${isRecording
+                        ? 'inset-x-0 top-0 bottom-0 bg-slate-950 flex flex-col items-center justify-center pt-20 pb-40'
+                        : 'bottom-10 left-10 w-32 h-44 border border-cyber-cyan/30 bg-slate-900/80'
+                    }
+                `}>
+                    {/* Recording Backdrop (Blurred video for atmosphere) */}
+                    {isRecording && (
+                        <div className="absolute inset-0 opacity-20 blur-2xl scale-110 pointer-events-none">
+                            <video
+                                key="backdrop"
+                                ref={(el) => { if (el) el.srcObject = stream; }}
+                                autoPlay
+                                muted
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                    )}
+
+                    {/* Main Video Overlay */}
+                    <div className={`relative transition-all duration-500 shadow-2xl overflow-hidden
+                        ${isRecording
+                            ? 'w-[85%] aspect-[3/4] border-2 border-alert-rose ring-4 ring-alert-rose/20'
+                            : 'w-full h-full'
+                        }
+                    `}>
+                        <video
+                            ref={videoRef}
+                            autoPlay
+                            muted
+                            playsInline
+                            className="w-full h-full object-cover"
+                        />
+
+                        {/* Live/Rec Indicator */}
+                        <div className="absolute top-4 left-4 flex items-center gap-2 z-30 bg-slate-950/60 backdrop-blur-md px-2 py-1 border border-white/10 rounded">
+                            <div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-alert-rose animate-pulse' : 'bg-cyber-cyan animate-pulse'}`} />
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white">
+                                {isRecording ? 'RECORDING' : 'LIVE FEED'}
+                            </span>
+                        </div>
                     </div>
-                    <video
-                        ref={videoRef}
-                        autoPlay
-                        muted
-                        playsInline
-                        className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 border border-inset border-cyber-cyan/20 pointer-events-none" />
+
+                    {/* Large Microphone UI (Shown only when recording) */}
+                    {isRecording && (
+                        <div className="mt-12 flex flex-col items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            <div className="relative">
+                                {/* Sound Wave Rings */}
+                                {[...Array(3)].map((_, i) => (
+                                    <div
+                                        key={i}
+                                        className="absolute inset-0 rounded-full border border-cyber-cyan/30 pointer-events-none"
+                                        style={{
+                                            transform: `scale(${1 + (volume / 100) * (i + 1)})`,
+                                            opacity: (volume / 255) * (1 / (i + 1))
+                                        }}
+                                    />
+                                ))}
+
+                                <div className={`p-8 rounded-full border-2 transition-all duration-100 flex items-center justify-center
+                                    ${volume > 15 ? 'border-cyber-cyan bg-cyber-cyan/10 shadow-[0_0_40px_rgba(34,211,238,0.4)]' : 'border-cyber-cyan/20 bg-slate-900'}
+                                `}>
+                                    <Mic
+                                        className="w-12 h-12 text-cyber-cyan"
+                                        style={{
+                                            transform: `scale(${1 + (volume / 300)})`,
+                                            filter: `drop-shadow(0 0 ${volume / 4}px rgba(34,211,238,0.8))`
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-center gap-1">
+                                <span className="text-xs font-bold tracking-[0.3em] text-cyber-cyan uppercase">Audio Uplink Active</span>
+                                <div className="flex gap-1 h-4 items-end">
+                                    {[...Array(8)].map((_, i) => (
+                                        <div
+                                            key={i}
+                                            className="w-1 bg-cyber-cyan/60 rounded-t"
+                                            style={{
+                                                height: `${Math.max(2, (volume / (10 + i * 5)) * 100)}%`,
+                                                transition: 'height 0.1s ease-out'
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
