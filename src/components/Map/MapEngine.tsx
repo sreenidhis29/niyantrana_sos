@@ -81,9 +81,13 @@ const DropHandler: React.FC<{ onUnitDrop: MapEngineProps['onUnitDrop'] }> = ({ o
 
         try {
             const unitData = JSON.parse(raw);
-            // Convert the screen pixel position to a Leaflet LatLng
-            const containerPoint = L.point(e.offsetX, e.offsetY);
-            const latlng = map.containerPointToLatLng(containerPoint);
+
+            // Accuracy Fix: Calculate container point from client coordinates relative to map container
+            const rect = map.getContainer().getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const latlng = map.containerPointToLatLng(L.point(x, y));
             onUnitDrop(unitData, latlng.lat, latlng.lng);
         } catch (err) {
             console.error('Drop error:', err);
